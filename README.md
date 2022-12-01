@@ -7,7 +7,8 @@ In the last decades, the domain of spatial computing became more and more data-d
 
 ![Compression in deep learning - experiment pipline](assets/comp-in-dl.png)
 
-*Figure 1: The pipeline of the experiment is to evaluate the impact of the two selected compression methods and their parameters in convolutional neural networks.*
+*Figure 1: The pipeline of the experiment to evaluate the impact of the two selected compression methods and their parameters in convolutional neural networks.*
+
 
 ## Requirements
 This project does use public datasets:
