@@ -9,18 +9,103 @@ In the last decades, the domain of spatial computing became more and more data-d
 
 *Figure 1: The pipeline of the experiment is to evaluate the impact of the two selected compression methods and their parameters in convolutional neural networks.*
 
-## Setup
+## Requirements
 This project does use public datasets:
-1. EuroSAT
-2. RSI-CB256
-3. AID
+1. EuroSAT - [Source](https://github.com/phelber/eurosat), [Paper no. 1](https://doi.org/10.1109/JSTARS.2019.2918242), [Paper no. 2](https://doi.org/10.1109/IGARSS.2018.8519248)
+2. RSI-CB256 - [Source](https://github.com/lehaifeng/RSI-CB), [Paper](https://doi.org/10.3390/s20061594)
+3. AID - [Source](https://captain-whu.github.io/AID/), [Paper](https://doi.org/10.1109/TGRS.2017.2685945)
 
 Those datasets need to be downloaded and split into three subsets, one training set (folder name: train), one validation set (folder name: val_0), and one test set (folder name: val_1). The path to those datasets needs to be adjusted in `./set_env.sh`.
 
-Additionally, Docker should be available to run perform the training and deploy the models. 
-
+Additionally, Docker should be available to run perform the training and deploy the models.
 
 ## Run Experiments
+This section shows the steps to pre-process the data, train, and deploy the data.  
+
+#### Step 1: Data pre-processing 
+During the pre-processing, the data is quantization followed by an embedding into selected file formats. 
+
+Note that the data needs to be downloaded manually, before performing the following steps. 
+
+**Quantization**:
+To quantize the data use the file `quantize.py`
+```console
+user@hostnmame:~$ source ./*.sh <dataset name> <data root path> "
+```
+**data root path**: the path where the dataset is located. </br>
+**dataset name**: The name of the dataset folder. </br>
+
+This step quantizes the dataset to 1,2,3,4,5,6,7,8 bit per channel. 
+
+**Image Embedding**:
+Next, the images need to be embedded into several file formats. Converters for the file formats JPEG, PNG, TIFF, PPM, and BMP are provided. The scripts can be used with
+
+```console
+user@hostnmame:~$ source ./*.sh <in> <output> <quality factor>
+```
+
+**in**: input path to the dataset folder (e.g.,`./aid/`) </br>
+**out**: path to the output location </br>
+**quality factor**: quality parameter (note that the range of this parameter might change, documentation: [https://imagemagick.org/script/command-line-options.php#quality](https://imagemagick.org/script/command-line-options.php#quality)). </br>
+
+please note that a large amount of storage might be required.
+
+#### Step 2: Training the models
+# Training the models 
+
+The models are trained using the scripts in the folder `./01_train/`. 
+In order to train a model with specific parameters, a config file is required, this does look like the file is ./01_inferance/config/sample.json:
+```json
+{
+    "name": "aid-reference-km-8",
+    "model": "vgg16_vitis",
+    "weights": "imagenet",
+    "dataset": "aid-reference-km-8",
+    "img_dest_size": [224, 224],
+    "inference_script": "gpu",
+    "batch_size":128,
+    "save_model": false,
+    "loss": "categorical_crossentropy",
+    "metrics": ["acc"],
+    "top_layers":[
+        {"layer":"Flatten", "param":{}},
+        {"layer":"Dense", "param":{"units":4096, "activation":"relu"}},
+        {"layer":"Dropout", "param":{"rate":0.5}},
+        {"layer":"Dense", "param":{"units":4096, "activation":"relu"}},
+        {"layer":"Dropout", "param":{"rate":0.5}},
+        {"layer":"Dense", "param":{"activation":"softmax"}}
+    ],
+    "train": [
+          {"epochs": 10, "base_model_is_trainable": true }
+    ],
+    "optimizer": [{"opt": "Adam", "param": {"learning_rate": 1e-4}}]
+}
+```
+
+To train all configurations in one folder, the file `train.sh` starts a docker container and trains the model using TensorFlow.
+ 
+```console
+user@hostnmame:~$ source ./train.sh <path>
+```
+**path**: path to config files
+
+
+#### Step 3: Deploy to custom hardware (Xilinx ZCU102)
+This step deploys the trained models of a hardware accelerator, specifically an FPGA from type Xilinx ZCU102 using the scripts in the folder `./02_deploy/`.
+
+The deployment is done using the following steps:
+1. Inference the model to be checked if the model is valid. 
+2. Quantize the model using VitisAI.
+3. Compile the quantized model for a defined DPU. 
+4. Finally, the target application for the FPGA is created. 
+
+To deploy a model TensorFlow model to FPGA , run the script `deploy.sh`
+```console
+user@hostnmame:~$ source ./deploy.sh <dataset path> <model path> <target name>
+```
+**dataset path**: path to the datasets, which has been used to train the model. </br>
+**model path**: path to the saved model. </br>
+**target name**: the name used to save the output application for the FPGA. </br>
 
 
 ## Citation

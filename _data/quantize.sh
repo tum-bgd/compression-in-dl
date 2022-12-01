@@ -3,14 +3,14 @@ export GOTO_NUM_THREADS=64
 export OMP_NUM_THREADS=64
 
 
-if [ ! -n "$1" ]; then
+if [ ! -n "$2" ]; then
   echo "Parameter enough not supplied."
-  echo "USAGE: source ./*.sh [dataset name]"
+  echo "USAGE: source ./*.sh [dataset name] [path to parent location]"
   return
 fi
 
-d_path=$1
-dataset=$2
+d_path=$2
+dataset=$1
 
 echo "------------------------------------------------"
 echo "Start with ${dataset} (location_ ${d_path})"
@@ -31,16 +31,16 @@ extension="${file##*.}"
 
 echo $extension
 
-if [ "$dataset" != "TIFF" ] && [ "$dataset" != "tiff" ] && [ "$dataset" != "TIF" ] && [ "$dataset" != "tif" ]; then
+if [ "$extension" == "TIFF" ] && [ "$extension" == "tiff" ] && [ "$extension" == "TIF" ] && [ "$extension" == "tif" ]; then
     source ./tiff.sh $1/reference $1/
 fi
 
-if [ "$dataset" != "PNG" ] && [ "$dataset" != "png" ]; then
+if [ "$extension" == "PNG" ] && [ "$extension" == "png" ]; then
     source ./png.sh $1/reference $1/ 75
     source ./png.sh $1/reference $1/ 95
 fi
 
-if [ "$dataset" != "BMP" ] && [ "$dataset" != "bmp" ]; then
+if [ "$extension" == "BMP" ] && [ "$extension" == "bmp" ]; then
     source ./bmp.sh $1/reference $1/
 fi
 

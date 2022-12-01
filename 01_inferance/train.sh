@@ -1,6 +1,8 @@
-#if [[ "$(docker images -q myimage:mytag 2> /dev/null)" == "" ]]; then
-#  # do something
-#fi
+if [[ "$(docker images -q rsmodels/tf_train 2> /dev/null)" == "" ]]; then
+  cd container
+  make
+  cd ..
+fi
 
 yourfilenames=`ls $1`
 
